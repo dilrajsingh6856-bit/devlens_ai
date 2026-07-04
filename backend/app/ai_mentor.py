@@ -362,7 +362,7 @@ class AiMentor:
                     )
                 )
                 opportunities.append(
-                    schemas.RefactoringOpportunity(
+                    schemas.RefactorOpportunity(
                         file=path,
                         description="Extract sensitive credentials to .env file",
                         before_code="const SECRET = 'my-secret-key-123';",
@@ -375,7 +375,7 @@ class AiMentor:
         if not opportunities:
             target_file = list(file_contents.keys())[0] if file_contents else "index.js"
             opportunities.append(
-                schemas.RefactoringOpportunity(
+                schemas.RefactorOpportunity(
                     file=target_file,
                     description="Convert nested callbacks or inline calculations to helper functions",
                     before_code="// Inline code block or nested handlers",
