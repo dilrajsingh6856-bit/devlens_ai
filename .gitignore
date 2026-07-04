@@ -1,10 +1,13 @@
 # Backend ignores
-backend/venv/
-backend/__pycache__/
-backend/*.pyc
-backend/.env
+venv/
+__pycache__/
+*.pyc
+.env
 devlens.db
-backend/devlens.db
+**/__pycache__/
+**/*.pyc
+**/.env
+**/devlens.db
 
 # Frontend ignores
 frontend/node_modules/
