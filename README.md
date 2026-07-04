@@ -1,6 +1,14 @@
 # DevLens AI – Intelligent GitHub Mentor
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/dilrajsingh6856-bit/devlens_ai)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/dilrajsingh6856-bit/devlens_ai&root-directory=frontend&env=VITE_API_URL)
+
 DevLens AI is a modern full-stack developer portfolio mentoring and static analysis dashboard. It fetches repositories, commit profiles, pull requests, languages, and contribution details from the GitHub API, and leverages the Google Gemini API to analyze the developer's skill set, generate personalized roadmaps, evaluate internship readiness, identify codebase smells, and suggest refactoring diffs.
+
+### 🌐 Cloud Deployment Setup
+You can host your application publicly in 2 clicks:
+1. **Deploy Backend**: Click the **Deploy to Render** button above to host your FastAPI Python API. In Render settings, add your `GEMINI_API_KEY` (and optional `GITHUB_TOKEN` or GitHub OAuth keys). Render will provide a live API URL like `https://devlens-api.onrender.com`.
+2. **Deploy Frontend**: Click the **Deploy with Vercel** button above. It will clone the frontend dashboard and ask you to input the `VITE_API_URL` environment variable. Set it to `https://devlens-api.onrender.com/api/v1` (referencing your deployed Render API backend).
 
 ---
 
