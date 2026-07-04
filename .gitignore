@@ -1,0 +1,17 @@
+# Backend ignores
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+devlens.db
+backend/devlens.db
+
+# Frontend ignores
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.DS_Store
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnpm-debug.log*
