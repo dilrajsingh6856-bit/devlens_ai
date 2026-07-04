@@ -1,10 +1,13 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
-
 class ApiService {
+  private getBaseUrl(): string {
+    return localStorage.getItem("devlens_api_url") || import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+  }
+
   private getHeaders(): HeadersInit {
     const token = localStorage.getItem("devlens_token");
     const headers: HeadersInit = {
       "Content-Type": "application/json",
+      "Bypass-Tunnel-Reminder": "true"
     };
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
@@ -13,7 +16,8 @@ class ApiService {
   }
 
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${API_BASE_URL}/${endpoint.lstrip('/')}`;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    const url = `${this.getBaseUrl()}/${cleanEndpoint}`;
     const headers = { ...this.getHeaders(), ...options.headers };
     
     const response = await fetch(url, { ...options, headers });

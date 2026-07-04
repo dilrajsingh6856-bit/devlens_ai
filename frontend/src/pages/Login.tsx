@@ -19,6 +19,21 @@ export const Login: React.FC<LoginProps> = ({ onNavigateToDashboard }) => {
   const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [apiUrl, setApiUrl] = useState(() => {
+    return localStorage.getItem("devlens_api_url") || import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+  });
+
+  const handleApiUrlChange = (val: string) => {
+    setApiUrl(val);
+    localStorage.setItem("devlens_api_url", val);
+  };
+
+  const handleResetApiUrl = () => {
+    const defaultUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+    setApiUrl(defaultUrl);
+    localStorage.removeItem("devlens_api_url");
+  };
+
   useEffect(() => {
     // Handle OAuth Callback redirect
     const urlParams = new URLSearchParams(window.location.search);
@@ -178,6 +193,27 @@ export const Login: React.FC<LoginProps> = ({ onNavigateToDashboard }) => {
               </button>
               <div className="text-center text-[10px] text-zinc-500">
                 Safe OAuth connection. Read-only permissions requested.
+              </div>
+              <div className="pt-4 border-t border-zinc-900 mt-2 space-y-1.5 text-left">
+                <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wider">
+                  API Endpoint Target
+                </label>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={apiUrl}
+                    onChange={(e) => handleApiUrlChange(e.target.value)}
+                    className="flex-1 bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-300 focus:outline-none focus:border-zinc-700"
+                    placeholder="http://localhost:8000/api/v1"
+                  />
+                  <button 
+                    type="button"
+                    onClick={handleResetApiUrl}
+                    className="bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-[10px] text-zinc-400 px-2.5 py-1 rounded transition-colors"
+                  >
+                    Reset
+                  </button>
+                </div>
               </div>
             </div>
           </div>
