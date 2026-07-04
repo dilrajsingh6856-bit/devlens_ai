@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   ExternalLink, Code, Sparkles, MapPin, Users, Award, 
   Activity, Compass, LogOut, ChevronRight, CheckCircle2, AlertTriangle, 
-  ListFilter, BookOpen
+  ListFilter, BookOpen, Copy, Check, FileText, X
 } from 'lucide-react';
 
 import { SkillRadarChart } from '../components/SkillRadarChart';
@@ -23,12 +23,17 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({ username, on
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [githubUser, setGithubUser] = useState<any>(null);
 
   // Repository static analysis modal state
   const [_selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [repoAnalysis, setRepoAnalysis] = useState<any>(null);
   const [repoLoading, setRepoLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // README generator modal state
+  const [isReadmeModalOpen, setIsReadmeModalOpen] = useState(false);
+  const [readmeCopied, setReadmeCopied] = useState(false);
 
   // Tab State
   const [activeTab, setActiveTab] = useState<'insights' | 'opensource'>('insights');
@@ -48,6 +53,16 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({ username, on
         setError("Failed to load profile analysis. Verify username exists or API server is running.");
         setLoading(false);
       });
+
+    // Fetch live metadata from public GitHub API
+    fetch(`https://api.github.com/users/${username}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && !data.message) {
+          setGithubUser(data);
+        }
+      })
+      .catch(err => console.error("Error fetching GitHub profile:", err));
   }, [username]);
 
   // Fetch Open Source Recommendations
@@ -161,13 +176,13 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({ username, on
         <div className="glass-card p-6 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
             <img 
-              src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${username}`} 
+              src={githubUser?.avatar_url || `https://github.com/${username}.png`} 
               alt={username}
-              className="w-16 h-16 rounded-2xl border-2 border-zinc-800 bg-zinc-900"
+              className="w-16 h-16 rounded-2xl border border-zinc-800 bg-zinc-900 object-cover"
             />
             <div className="space-y-1.5">
               <h2 className="text-xl font-bold text-white flex items-center justify-center sm:justify-start space-x-2">
-                <span>{username.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())}</span>
+                <span>{githubUser?.name || username.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())}</span>
                 <a 
                   href={`https://github.com/${username}`} 
                   target="_blank" 
@@ -179,16 +194,16 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({ username, on
               </h2>
               <p className="text-xs font-mono text-zinc-500">@{username}</p>
               <p className="text-xs text-zinc-400 max-w-md leading-relaxed">
-                Full-stack developer building open source apps and preparing for tech internships.
+                {githubUser?.bio || "Full-stack developer building open source apps and preparing for tech internships."}
               </p>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 pt-1.5 text-xs text-zinc-500">
                 <span className="flex items-center space-x-1">
                   <MapPin size={12} />
-                  <span>San Francisco, CA</span>
+                  <span>{githubUser?.location || "Remote"}</span>
                 </span>
                 <span className="flex items-center space-x-1">
                   <Users size={12} />
-                  <span>23 followers</span>
+                  <span>{githubUser?.followers !== undefined ? `${githubUser.followers} followers` : "Active contributor"}</span>
                 </span>
               </div>
             </div>
@@ -341,14 +356,25 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({ username, on
               </div>
 
               {/* Resume Feedback */}
-              <div className="glass-card p-5 space-y-3">
-                <h4 className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center space-x-1.5">
-                  <BookOpen size={12} className="text-primary-400" />
-                  <span>Resume Insights</span>
-                </h4>
-                <p className="text-xs text-zinc-400 leading-relaxed font-light">
-                  {profileData.resume_feedback}
-                </p>
+              <div className="glass-card p-5 space-y-3 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center space-x-1.5">
+                    <BookOpen size={12} className="text-primary-400" />
+                    <span>Resume Insights</span>
+                  </h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed font-light">
+                    {profileData.resume_feedback}
+                  </p>
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => setIsReadmeModalOpen(true)}
+                  className="w-full mt-4 flex items-center justify-center space-x-2 bg-primary-950 hover:bg-primary-900 border border-primary-900 text-primary-400 hover:text-white rounded-lg px-4 py-2.5 text-xs font-semibold transition-all duration-300 transform hover:-translate-y-0.5"
+                >
+                  <Sparkles size={13} className="animate-pulse" />
+                  <span>Export Profile README</span>
+                </button>
               </div>
             </div>
 
@@ -589,6 +615,132 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({ username, on
         isLoading={repoLoading}
         analysis={repoAnalysis}
       />
+
+      {/* GitHub Profile README Generator Modal */}
+      {isReadmeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950 bg-opacity-70 backdrop-blur-sm animate-fade-in text-left">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-scale-up">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <div className="bg-primary-950 border border-primary-900 p-1.5 rounded-lg text-primary-400">
+                  <FileText size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">GitHub Profile README</h3>
+                  <p className="text-[10px] text-zinc-500">Copy this template to your profile repo to showcase your coding skills!</p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsReadmeModalOpen(false)}
+                className="text-zinc-500 hover:text-zinc-350 p-1.5 hover:bg-zinc-850 rounded-lg transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 font-mono text-[11px] text-zinc-400 bg-zinc-950 select-text leading-relaxed whitespace-pre-wrap">
+{`# Hi there, I'm ${githubUser?.name || username.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())}! 👋
+
+### 🚀 AI Agentic Systems & Full-Stack Backend Engineer
+I specialize in building distributed backend systems, multi-agent frameworks (LangGraph/LangChain), real-time streaming integrations, and performance-optimized API architectures. My focus is on combining robust data structures with state-of-the-art LLMs to create autonomous, production-grade applications.
+
+---
+
+### 🛠️ Core Technology Stack
+
+<p align="left">
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
+  
+  <br/>
+  
+  <img src="https://img.shields.io/badge/LangGraph-FF6F00?style=for-the-badge&logoColor=white" />
+  <img src="https://img.shields.io/badge/Gemini_AI-4285F4?style=for-the-badge&logo=google&logoColor=white" />
+  <img src="https://img.shields.io/badge/Vector_DB-Chroma-red?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/LiveKit-0052FF?style=for-the-badge&logoColor=white" />
+  
+  <br/>
+  
+  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+</p>
+
+---
+
+### 🤖 Core Technical Highlights
+
+#### 1. AI Orchestration & Multimodal Pipelines
+*   **LangGraph Orchestration**: Built multi-step agent workflows featuring conditional decision nodes, error-correction states, and persistent memory checkpoints.
+*   **Multimodal & Vision processing**: Processed real-time visual frames and screenshots using ONNX Runtime and Gemini Vision APIs to execute safe UI interactions.
+*   **Semantic Search & RAG**: Engineered context-aware knowledge retrievals using vector databases (ChromaDB) and advanced text splitters.
+
+#### 2. Distributed Backends & DSA Optimizations
+*   **Task Scheduling**: Designed a Redis-backed priority queue executing jobs using graph topological sort algorithms.
+*   **Performance caching**: Reduced redundant API calls and model latency by integrating intelligent cache eviction policies (cachetools).
+*   **Concurrency**: Experienced in building non-blocking backend runtimes using asyncio and pytest-asyncio.
+
+#### 3. Real-Time Systems Architecture
+*   **LiveKit Bridge**: Designed WebSocket video streaming pipelines executing real-time frame transfers.
+*   **FastAPI API Gateways**: Created secure endpoints featuring rate-limiting middleware (slowapi) and robust JWT session tokens.
+
+---
+
+### 📈 GitHub Stats Overview
+
+<p align="center">
+  <img height="180" src="https://github-readme-stats.vercel.app/api?username=${username}&show_icons=true&theme=dark&bg_color=09090b&border_color=27272a&title_color=a855f7&icon_color=c084fc&text_color=a1a1aa" alt="GitHub Stats" />
+  <img height="180" src="https://github-readme-stats.vercel.app/api/top-langs/?username=${username}&layout=compact&theme=dark&bg_color=09090b&border_color=27272a&title_color=a855f7&text_color=a1a1aa" alt="Top Languages" />
+</p>
+
+---
+
+### 📫 How to Connect with Me
+*   **GitHub Link**: [https://github.com/${username}](https://github.com/${username})
+`}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-zinc-800 bg-zinc-900 bg-opacity-40 flex items-center justify-end space-x-3">
+              <button 
+                type="button"
+                onClick={() => setIsReadmeModalOpen(false)}
+                className="bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-400 hover:text-white rounded-lg px-4 py-2 text-xs font-semibold transition-colors"
+              >
+                Close
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  const content = `# Hi there, I'm ${githubUser?.name || username.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())}! 👋\n\n### 🚀 AI Agentic Systems & Full-Stack Backend Engineer\nI specialize in building distributed backend systems, multi-agent frameworks (LangGraph/LangChain), real-time streaming integrations, and performance-optimized API architectures. My focus is on combining robust data structures with state-of-the-art LLMs to create autonomous, production-grade applications.\n\n---\n\n### 🛠️ Core Technology Stack\n\n<p align="left">\n  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" />\n  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" />\n  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />\n  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />\n  \n  <br/>\n  \n  <img src="https://img.shields.io/badge/LangGraph-FF6F00?style=for-the-badge&logoColor=white" />\n  <img src="https://img.shields.io/badge/Gemini_AI-4285F4?style=for-the-badge&logo=google&logoColor=white" />\n  <img src="https://img.shields.io/badge/Vector_DB-Chroma-red?style=for-the-badge" />\n  <img src="https://img.shields.io/badge/LiveKit-0052FF?style=for-the-badge&logoColor=white" />\n  \n  <br/>\n  \n  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" />\n  <img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" />\n  <img src="https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" />\n  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />\n</p>\n\n---\n\n### 🤖 Core Technical Highlights\n\n#### 1. AI Orchestration & Multimodal Pipelines\n*   **LangGraph Orchestration**: Built multi-step agent workflows featuring conditional decision nodes, error-correction states, and persistent memory checkpoints.\n*   **Multimodal & Vision processing**: Processed real-time visual frames and screenshots using ONNX Runtime and Gemini Vision APIs to execute safe UI interactions.\n*   **Semantic Search & RAG**: Engineered context-aware knowledge retrievals using vector databases (ChromaDB) and advanced text splitters.\n\n#### 2. Distributed Backends & DSA Optimizations\n*   **Task Scheduling**: Designed a Redis-backed priority queue executing jobs using graph topological sort algorithms.\n*   **Performance caching**: Reduced redundant API calls and model latency by integrating intelligent cache eviction policies (cachetools).\n*   **Concurrency**: Experienced in building non-blocking backend runtimes using asyncio and pytest-asyncio.\n\n#### 3. Real-Time Systems Architecture\n*   **LiveKit Bridge**: Designed WebSocket video streaming pipelines executing real-time frame transfers.\n*   **FastAPI API Gateways**: Created secure endpoints featuring rate-limiting middleware (slowapi) and robust JWT session tokens.\n\n---\n\n### 📈 GitHub Stats Overview\n\n<p align="center">\n  <img height="180" src="https://github-readme-stats.vercel.app/api?username=${username}&show_icons=true&theme=dark&bg_color=09090b&border_color=27272a&title_color=a855f7&icon_color=c084fc&text_color=a1a1aa" alt=\"GitHub Stats\" />\n  <img height="180" src="https://github-readme-stats.vercel.app/api/top-langs/?username=${username}&layout=compact&theme=dark&bg_color=09090b&border_color=27272a&title_color=a855f7&text_color=a1a1aa" alt=\"Top Languages\" />\n</p>\n\n---\n\n### 📫 How to Connect with Me\n*   **GitHub Link**: [https://github.com/${username}](https://github.com/${username})\n`;
+                  navigator.clipboard.writeText(content);
+                  setReadmeCopied(true);
+                  setTimeout(() => setReadmeCopied(false), 2000);
+                }}
+                className="flex items-center space-x-1.5 bg-primary-600 hover:bg-primary-500 text-white rounded-lg px-4 py-2 text-xs font-semibold transition-colors animate-fade-in"
+              >
+                {readmeCopied ? (
+                  <>
+                    <Check size={12} />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={12} />
+                    <span>Copy Markdown</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
